@@ -1,0 +1,39 @@
+syntax = "proto2";
+option java_package = "com.kvstore.proto";
+
+message GetRequest {
+  required string key = 1;
+}
+
+message GetResponse {
+  required bool found = 1;
+  required string key = 2;
+  optional string value = 3;
+}
+
+message PutRequest {
+  required string key = 1;
+  required string value = 2;
+}
+
+message PutResponse {
+  required bool success = 1;
+  required string key = 2;
+  required string value = 3;
+}
+
+message RPCRequest {
+  required int64 sequenceNum = 1;
+  oneof KVStoreServerRequest {
+    GetRequest getRequest = 2;
+    PutRequest putRequest = 3;
+  }
+}
+
+message RPCResponse {
+  required int64 sequenceNum = 1;
+  oneof KVStoreServerResponse {
+    GetResponse getResponse = 2;
+    PutResponse putResponse = 3;
+  }
+}
