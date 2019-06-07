@@ -14,6 +14,7 @@ import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RPCClient {
@@ -26,7 +27,7 @@ public class RPCClient {
   public RPCClient() {
     this.sequenceNum = new AtomicLong(0);
     this.bootstrap = new Bootstrap();
-    this.responseListeners = new HashMap<>();
+    this.responseListeners = new ConcurrentHashMap<>();
   }
 
   public void start() {
@@ -71,6 +72,8 @@ public class RPCClient {
   }
 
   long getNextSequenceNum() {
-    return sequenceNum.incrementAndGet();
+    final long seq = sequenceNum.incrementAndGet();
+    responseListeners.put(seq, new RPCResponseListener());
+    return seq;
   }
 }

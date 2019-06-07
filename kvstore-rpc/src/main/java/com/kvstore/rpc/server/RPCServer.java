@@ -62,9 +62,8 @@ public class RPCServer {
       .childHandler(channelInitializer);
 
     try {
-      final Channel channel = serverBootstrap.bind().sync().channel();
-      System.out.println("KVStore RPC server started at: " + channel.localAddress());
-      System.out.println("Listening for requests on port: " + port);
+      final Channel channel = serverBootstrap.bind(port).sync().channel();
+      System.out.println("RPC services are up. Server listening for requests on port: " + port);
       Runtime.getRuntime().addShutdownHook(new Thread() {
         @Override
         public void run() {

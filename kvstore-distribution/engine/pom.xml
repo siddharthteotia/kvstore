@@ -22,7 +22,6 @@
             <groupId>com.kvstore.distribution</groupId>
             <artifactId>kvstore-distribution-resources</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.kvstore</groupId>

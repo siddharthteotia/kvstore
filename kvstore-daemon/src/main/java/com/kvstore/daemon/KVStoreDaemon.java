@@ -9,31 +9,37 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import java.net.InetAddress;
+import java.net.URL;
 
 public class KVStoreDaemon {
 
   public static void main (String[] args) throws Exception {
+    final URL configURL = KVStoreDaemon.class.getResource(KVStoreConfig.USER_CONFIG);
+    Config userConfig = ConfigFactory.parseURL(configURL);
 
-    Config config = ConfigFactory.load();
+    final int serverRPCPort = userConfig.getInt(KVStoreConfig.RPC_SERVER_PORT);
 
-    final boolean rpcDemoEnabled = config.getBoolean(KVStoreConfig.RPC_DEMO_ENABLED);
-    final String demoServerEndpoint  = rpcDemoEnabled ? config.getString(KVStoreConfig.RPC_DEMO_SERVER_ENDPOINT) : "";
-    final int serverRPCPort = config.getInt(KVStoreConfig.RPC_SERVER_PORT);
+    String host = InetAddress.getLocalHost().getHostAddress();
+    System.out.println("KVStore daemon started on node: " + host);
 
     // start RPC client for this endpoint
     RPCClient rpcClient = new RPCClient();
     rpcClient.start();
 
-    // start RPC server for this endpoint
-    KeyValueMap store = new KeyValueMap();
-    RPCServer rpcServer = new RPCServer(serverRPCPort, store);
-    rpcServer.start();
+    final boolean rpcDemoEnabled = userConfig.getBoolean(KVStoreConfig.RPC_DEMO_ENABLED);
+    final String demoServerEndpoint  = rpcDemoEnabled ?
+      userConfig.getString(KVStoreConfig.RPC_DEMO_SERVER_ENDPOINT) : "";
 
     if (rpcDemoEnabled) {
       RPCDemo rpcDemoApp = new RPCDemo(rpcClient, new Endpoint(demoServerEndpoint, serverRPCPort));
       rpcDemoApp.start();
-      String host = InetAddress.getLocalHost().getHostAddress();
-      System.out.println("KVStore daemon started as demo RPC server on node: " + host + " at port: " + serverRPCPort);
+      System.out.println("Demo app also started on this node");
+      System.out.println("For demo this node will act as client and talk to peer: " + demoServerEndpoint);
     }
+
+    // start RPC server for this endpoint
+    KeyValueMap store = new KeyValueMap();
+    RPCServer rpcServer = new RPCServer(serverRPCPort, store);
+    rpcServer.start();
   }
 }

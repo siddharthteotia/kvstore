@@ -14,10 +14,11 @@ public class RPCDemoTask implements Runnable {
 
   @Override
   public void run() {
-    int count = 50;
-    while (count >= 0) {
+    int count = 1;
+    while (count > 0) {
       try {
         if (!proxy.isConnectionActive()) {
+          System.out.println("Demo task: " + Thread.currentThread().getId() + " Waiting for active connections");
           Thread.sleep(RPCDemo.SLEEP_TIME);
         }
       } catch (InterruptedException ie) {
