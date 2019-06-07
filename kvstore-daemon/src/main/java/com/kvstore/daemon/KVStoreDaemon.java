@@ -11,6 +11,10 @@ import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import java.net.URL;
 
+/**
+ * The main KVStore daemon process that is started on each
+ * node in the cluster
+ */
 public class KVStoreDaemon {
 
   public static void main (String[] args) throws Exception {
@@ -18,6 +22,7 @@ public class KVStoreDaemon {
     Config userConfig = ConfigFactory.parseURL(configURL);
 
     final int serverRPCPort = userConfig.getInt(KVStoreConfig.RPC_SERVER_PORT);
+    final int serverAsyncPoolThreads = userConfig.getInt(KVStoreConfig.SERVER_ASYNCPOOL_THREADS);
 
     String host = InetAddress.getLocalHost().getHostAddress();
     System.out.println("KVStore daemon started on node: " + host);
@@ -39,7 +44,7 @@ public class KVStoreDaemon {
 
     // start RPC server for this endpoint
     KeyValueMap store = new KeyValueMap();
-    RPCServer rpcServer = new RPCServer(serverRPCPort, store);
+    RPCServer rpcServer = new RPCServer(serverRPCPort, store, serverAsyncPoolThreads);
     rpcServer.start();
   }
 }

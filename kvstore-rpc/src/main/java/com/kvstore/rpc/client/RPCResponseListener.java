@@ -2,7 +2,12 @@ package com.kvstore.rpc.client;
 
 import com.kvstore.proto.KVStoreRPC;
 
-public class RPCResponseListener {
+/**
+ * A simple dumb implementation of listener where
+ * we currently just log the response arrived along
+ * with sequence number
+ */
+class RPCResponseListener {
 
   void done(KVStoreRPC.RPCResponse response) {
     if (response.hasGetResponse()) {

@@ -2,10 +2,26 @@ package com.kvstore.rpc.client.demo;
 
 import com.kvstore.common.Endpoint;
 import com.kvstore.rpc.client.RPCClient;
-import com.kvstore.rpc.client.RPCClientProxy;
+import com.kvstore.rpc.client.RPCClientConnectionProxy;
 
+/**
+ * A simple demo application to demonstrate the use of RPC
+ * layer. The demo application talks to an endpoint
+ * The demo application creates 2 threads
+ * {@link RPCDemoTask} and each thread talks to the same
+ * endpoint.
+ *
+ * First we create a connection to the endpoint
+ * via {@link RPCClientConnectionProxy} and pass
+ * the connection proxy to the tasks for executing
+ * the request-response behavior.
+ *
+ * Since {@link RPCClientConnectionProxy} represents a
+ * single physical connection/channel to an endpoint,
+ * both demo tasks send data concurrently (or in arbitrary
+ * unpredictable order) on the channel.
+ */
 public class RPCDemo {
-
   static final int SLEEP_TIME = 5000;
   private final RPCClient rpcClient;
   private final Endpoint peer;
@@ -16,7 +32,7 @@ public class RPCDemo {
   }
 
   public void start() {
-    final RPCClientProxy proxy = new RPCClientProxy(rpcClient, peer);
+    final RPCClientConnectionProxy proxy = new RPCClientConnectionProxy(rpcClient, peer);
     Thread task1 = new Thread(new RPCDemoTask(proxy));
     Thread task2 = new Thread(new RPCDemoTask(proxy));
     task1.start();

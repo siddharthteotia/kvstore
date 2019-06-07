@@ -1,24 +1,28 @@
 package com.kvstore.rpc.client.demo;
 
 import com.kvstore.common.KVStoreClientRequest;
-import com.kvstore.rpc.client.RPCClientProxy;
+import com.kvstore.rpc.client.RPCClientConnectionProxy;
 import org.apache.commons.lang3.RandomStringUtils;
 
+/**
+ * A task for the demo application. Sends a fixed
+ * number of requests to the endpoint.
+ */
 public class RPCDemoTask implements Runnable {
 
-  private final RPCClientProxy proxy;
+  private final RPCClientConnectionProxy proxy;
 
-  RPCDemoTask(final RPCClientProxy proxy) {
+  RPCDemoTask(final RPCClientConnectionProxy proxy) {
     this.proxy = proxy;
   }
 
   @Override
   public void run() {
-    int count = 1;
+    int count = 25;
     while (count > 0) {
       try {
-        if (!proxy.isConnectionActive()) {
-          System.out.println("Demo task: " + Thread.currentThread().getId() + " Waiting for active connections");
+        if (!proxy.isConnectionEstablished()) {
+          System.out.println("Demo task: " + Thread.currentThread().getName() + " Waiting for active connection");
           Thread.sleep(RPCDemo.SLEEP_TIME);
         }
       } catch (InterruptedException ie) {

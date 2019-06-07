@@ -7,27 +7,34 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
-public class RPCClientProxy {
+/**
+ * Creates and holds the RPC connection to an endpoint
+ * (remote or local).
+ */
+public class RPCClientConnectionProxy {
 
   private final RPCClient rpcClient;
   private final Endpoint endpoint;
-  private boolean isConnectionActive;
+  private boolean isConnectionEstablished;
   private Channel channel;
 
-  public RPCClientProxy (final RPCClient rpcClient, final Endpoint endpoint) {
+  public RPCClientConnectionProxy (final RPCClient rpcClient, final Endpoint endpoint) {
     this.rpcClient = rpcClient;
     this.endpoint = endpoint;
-    this.isConnectionActive = false;
+    this.isConnectionEstablished = false;
     establishConnection();
   }
 
+  /**
+   * Connect to an endpoint (remote or local)
+   */
   private void establishConnection() {
     final ChannelFuture future = rpcClient.connectToPeer(endpoint);
     future.addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture future) throws Exception {
         if (future.isSuccess()) {
-          isConnectionActive = true;
+          isConnectionEstablished = true;
           channel = future.channel();
         } else {
           System.out.println("Unable to establish connection with peer: " + endpoint.getAddress());
@@ -36,10 +43,19 @@ public class RPCClientProxy {
     });
   }
 
-  public boolean isConnectionActive() {
-    return isConnectionActive;
+  /**
+   * Checks if the connection has been established or not
+   * @return true if connection has been established, false otherwise
+   */
+  public boolean isConnectionEstablished() {
+    return isConnectionEstablished;
   }
 
+  /**
+   * Used to send RPC request. Builds the {@link com.kvstore.proto.KVStoreRPC.RPCRequest}
+   * and sends it over the wire
+   * @param request get/put request info encapsulated in {@link KVStoreClientRequest}
+   */
   public void send(final KVStoreClientRequest request) {
     final long sequenceNum = rpcClient.getNextSequenceNum();
     KVStoreRPC.RPCRequest rpcRequest;

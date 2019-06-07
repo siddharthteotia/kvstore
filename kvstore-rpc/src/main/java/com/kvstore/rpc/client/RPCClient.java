@@ -12,17 +12,19 @@ import io.netty.handler.codec.protobuf.ProtobufEncoder;
 import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder;
 import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * The client side of RPC layer on an endpoint in
+ * the KVStore cluster.
+ */
 public class RPCClient {
 
   private final AtomicLong sequenceNum;
   private Bootstrap bootstrap;
   private final Map<Long, RPCResponseListener> responseListeners;
-
 
   public RPCClient() {
     this.sequenceNum = new AtomicLong(0);
@@ -57,6 +59,10 @@ public class RPCClient {
       .handler(channelInitializer);
   }
 
+  /**
+   * Inbound handler for responses/data arriving from RPC server
+   * endpoints in the cluster.
+   */
   class RPCResponseHandler extends SimpleChannelInboundHandler<KVStoreRPC.RPCResponse> {
     @Override
     public void channelRead0(ChannelHandlerContext context, KVStoreRPC.RPCResponse rpcResponse) {
@@ -67,10 +73,22 @@ public class RPCClient {
     }
   }
 
+  /**
+   * Establish connection with an endpoint
+   * @param endpoint {@link Endpoint} representing a peer with host address/port
+   * @return {@link ChannelFuture}
+   */
   ChannelFuture connectToPeer(Endpoint endpoint) {
     return bootstrap.connect(endpoint.getAddress(), endpoint.getPort());
   }
 
+  /**
+   * For each request sent on the connection, we track the
+   * sequence number along with corresponding response listener
+   * which gets notified when the response for a particular
+   * request arrives.
+   * @return sequence number to be used for next request
+   */
   long getNextSequenceNum() {
     final long seq = sequenceNum.incrementAndGet();
     responseListeners.put(seq, new RPCResponseListener());

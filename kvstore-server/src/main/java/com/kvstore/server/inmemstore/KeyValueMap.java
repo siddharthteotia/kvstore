@@ -3,6 +3,10 @@ package com.kvstore.server.inmemstore;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * A simple wrapper over hash table to mimic
+ * an inmemory backend store
+ */
 public class KeyValueMap {
 
   private final Map<String, String> map;
