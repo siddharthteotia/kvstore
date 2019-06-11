@@ -13,11 +13,13 @@
 
     <files>
         <file>
-            <source>${kvstore.distribution.resources.dir}/conf/kvstore.conf</source>
+            <source>${kvstore.distribution.resources.dir}/conf/application.conf</source>
+            <fileMode>0777</fileMode>
             <outputDirectory>conf</outputDirectory>
         </file>
         <file>
             <source>${kvstore.distribution.resources.dir}/bin/kvstore-exec.sh</source>
+            <fileMode>0777</fileMode>
             <outputDirectory>bin</outputDirectory>
         </file>
     </files>

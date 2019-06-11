@@ -18,8 +18,7 @@ import java.net.URL;
 public class KVStoreDaemon {
 
   public static void main (String[] args) throws Exception {
-    final URL configURL = KVStoreDaemon.class.getResource(KVStoreConfig.USER_CONFIG);
-    Config userConfig = ConfigFactory.parseURL(configURL);
+    Config userConfig = ConfigFactory.load();
 
     final int serverRPCPort = userConfig.getInt(KVStoreConfig.RPC_SERVER_PORT);
     final int serverAsyncPoolThreads = userConfig.getInt(KVStoreConfig.SERVER_ASYNCPOOL_THREADS);

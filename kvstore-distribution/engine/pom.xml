@@ -19,11 +19,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.kvstore.distribution</groupId>
-            <artifactId>kvstore-distribution-resources</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.kvstore</groupId>
             <artifactId>kvstore-daemon</artifactId>
             <version>${project.version}</version>
