@@ -11,17 +11,15 @@ import io.netty.channel.ChannelFutureListener;
  * Creates and holds the RPC connection to an endpoint
  * (remote or local).
  */
-public class RPCClientConnectionProxy {
+public class RPCClientConnectionProxy implements AutoCloseable {
 
   private final RPCClient rpcClient;
   private final Endpoint endpoint;
-  private boolean isConnectionEstablished;
   private Channel channel;
 
   public RPCClientConnectionProxy (final RPCClient rpcClient, final Endpoint endpoint) {
     this.rpcClient = rpcClient;
     this.endpoint = endpoint;
-    this.isConnectionEstablished = false;
     establishConnection();
   }
 
@@ -33,11 +31,12 @@ public class RPCClientConnectionProxy {
     future.addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture future) throws Exception {
+        channel = future.channel();
         if (future.isSuccess()) {
-          isConnectionEstablished = true;
-          channel = future.channel();
+          System.out.println("Connected to peer: " + channel.remoteAddress());
         } else {
           System.out.println("Unable to establish connection with peer: " + endpoint.getAddress());
+          channel.close().sync();
         }
       }
     });
@@ -48,7 +47,7 @@ public class RPCClientConnectionProxy {
    * @return true if connection has been established, false otherwise
    */
   public boolean isConnectionEstablished() {
-    return isConnectionEstablished;
+    return channel != null && channel.isActive();
   }
 
   /**
@@ -93,5 +92,16 @@ public class RPCClientConnectionProxy {
         }
       }
     });
+  }
+
+  @Override
+  public void close() throws Exception {
+    try {
+      System.out.println("ConnectionProxy: Closing channel to peer " + channel.remoteAddress());
+      channel.closeFuture().sync();
+    } catch (Exception e) {
+      System.out.println("Failure while shutting down connection proxy");
+      throw e;
+    }
   }
 }

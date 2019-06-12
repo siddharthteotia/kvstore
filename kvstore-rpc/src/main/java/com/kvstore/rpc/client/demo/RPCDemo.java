@@ -21,21 +21,31 @@ import com.kvstore.rpc.client.RPCClientConnectionProxy;
  * both demo tasks send data concurrently (or in arbitrary
  * unpredictable order) on the channel.
  */
-public class RPCDemo {
+public class RPCDemo implements AutoCloseable {
   static final int SLEEP_TIME = 5000;
-  private final RPCClient rpcClient;
-  private final Endpoint peer;
+  private final RPCDemoTask task1;
+  private final RPCDemoTask task2;
+  private final RPCClientConnectionProxy connectionProxy;
+  static final int NUM_REQUESTS_EACH_TYPE = 50;
 
   public RPCDemo(final RPCClient rpcClient, final Endpoint peer) {
-    this.rpcClient = rpcClient;
-    this.peer = peer;
+    connectionProxy = new RPCClientConnectionProxy(rpcClient, peer);
+    task1 = new RPCDemoTask(connectionProxy);
+    task2 = new RPCDemoTask(connectionProxy);
   }
 
   public void start() {
-    final RPCClientConnectionProxy proxy = new RPCClientConnectionProxy(rpcClient, peer);
-    Thread task1 = new Thread(new RPCDemoTask(proxy));
-    Thread task2 = new Thread(new RPCDemoTask(proxy));
-    task1.start();
-    task2.start();
+    new Thread(task1).start();
+    new Thread(task2).start();
+    System.out.println("Started Demo tasks");
+  }
+
+  @Override
+  public void close() throws Exception {
+    System.out.println("Shutting down demo tasks");
+    task1.stop();
+    task2.stop();
+    System.out.println("Shutting down connection proxy");
+    connectionProxy.close();
   }
 }

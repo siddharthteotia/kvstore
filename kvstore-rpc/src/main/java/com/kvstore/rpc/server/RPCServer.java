@@ -21,20 +21,16 @@ import java.util.concurrent.Executors;
  * The server side of RPC layer on an endpoint in the
  * KVStore cluster.
  */
-public class RPCServer {
+public class RPCServer implements AutoCloseable {
 
+  private final EventLoopGroup connectionAcceptorGroup;
+  private final EventLoopGroup acceptedConnectionGroup;
   private final Executor asyncWorkerPool;
   private final int port;
   private final KeyValueMap store;
+  private Channel serverChannel;
 
   public RPCServer(final int port, final KeyValueMap store, final int numAsyncPoolThreads) {
-    this.asyncWorkerPool = Executors.newFixedThreadPool(numAsyncPoolThreads);
-    this.port = port;
-    this.store = store;
-  }
-
-  public void start() throws Exception {
-
     /*
      * Two event loop groups are used:
      * (1) First group is responsible for accepting connections.
@@ -47,8 +43,14 @@ public class RPCServer {
      *     assigned to exactly one event loop but multiple channels
      *     can be handled by a single event loop
      */
-    final EventLoopGroup connectionAcceptorGroup = new NioEventLoopGroup();
-    final EventLoopGroup connectionChannelGroup = new NioEventLoopGroup();
+    this.connectionAcceptorGroup = new NioEventLoopGroup();
+    this.acceptedConnectionGroup = new NioEventLoopGroup();
+    this.asyncWorkerPool = Executors.newFixedThreadPool(numAsyncPoolThreads);
+    this.port = port;
+    this.store = store;
+  }
+
+  public void start() throws Exception {
     final ChannelInitializer<SocketChannel> channelInitializer =
       new ChannelInitializer<SocketChannel>() {
         @Override
@@ -72,25 +74,16 @@ public class RPCServer {
       };
 
     final ServerBootstrap serverBootstrap = new ServerBootstrap()
-      .group(connectionAcceptorGroup, connectionChannelGroup)
+      .group(connectionAcceptorGroup, acceptedConnectionGroup)
       .channel(NioServerSocketChannel.class)
       .childHandler(channelInitializer);
 
     try {
-      final Channel channel = serverBootstrap.bind(port).sync().channel();
+      serverChannel = serverBootstrap.bind(port).sync().channel();
       System.out.println("RPC services are up. Server listening for requests on port: " + port);
-      Runtime.getRuntime().addShutdownHook(new Thread() {
-        @Override
-        public void run() {
-          connectionAcceptorGroup.shutdownGracefully();
-          connectionChannelGroup.shutdownGracefully();
-          System.out.println("JVM shutting down, stopping the RPC server");
-        }
-      });
-      channel.closeFuture().sync();
-    } finally {
-      connectionAcceptorGroup.shutdownGracefully();
-      connectionChannelGroup.shutdownGracefully();
+    } catch (Exception e) {
+      System.out.println("Failed to bind RPC server to port " + port);
+      throw e;
     }
   }
 
@@ -181,5 +174,23 @@ public class RPCServer {
     // callback code sends the RPCResponse back to client on
     // the completion of future
     responseFuture.thenAccept(response -> ctx.writeAndFlush(response));
+  }
+
+  @Override
+  public void close() throws Exception {
+    try {
+      System.out.println("Shutting down RPC server");
+      serverChannel.close().sync();
+    } catch (Exception e) {
+      System.out.println("Failure while shutting down RPC server");
+      throw e;
+    } finally {
+      try {
+        connectionAcceptorGroup.shutdownGracefully().sync();
+        acceptedConnectionGroup.shutdownGracefully().sync();
+      } catch (InterruptedException ie) {
+        System.out.println("RPC server interrupted while shutting down event loop groups");
+      }
+    }
   }
 }

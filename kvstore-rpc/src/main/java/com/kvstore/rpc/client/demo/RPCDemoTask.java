@@ -10,16 +10,18 @@ import org.apache.commons.lang3.RandomStringUtils;
  */
 public class RPCDemoTask implements Runnable {
 
+  private volatile boolean cancel;
   private final RPCClientConnectionProxy proxy;
 
   RPCDemoTask(final RPCClientConnectionProxy proxy) {
+    this.cancel = false;
     this.proxy = proxy;
   }
 
   @Override
   public void run() {
-    int count = 25;
-    while (count > 0) {
+    int count = 0;
+    while (!cancel && count < RPCDemo.NUM_REQUESTS_EACH_TYPE) {
       try {
         if (!proxy.isConnectionEstablished()) {
           System.out.println("Demo task: " + Thread.currentThread().getName() + " Waiting for active connection");
@@ -35,7 +37,18 @@ public class RPCDemoTask implements Runnable {
       final String value = RandomStringUtils.randomAlphabetic(10);
       proxy.send(new KVStoreClientRequest(key, value));
       proxy.send(new KVStoreClientRequest(key, null));
-      --count;
+      ++count;
     }
+    final StringBuilder sb = new StringBuilder();
+    sb.append("Demo task thread: ")
+      .append(Thread.currentThread().getId())
+      .append(" exiting after issuing ")
+      .append(count)
+      .append(" get and put requests");
+    System.out.println(sb.toString());
+  }
+
+  void stop() {
+    cancel = true;
   }
 }

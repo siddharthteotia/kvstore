@@ -20,20 +20,21 @@ import java.util.concurrent.atomic.AtomicLong;
  * The client side of RPC layer on an endpoint in
  * the KVStore cluster.
  */
-public class RPCClient {
+public class RPCClient implements AutoCloseable {
 
+  private final EventLoopGroup eventLoopGroup;
   private final AtomicLong sequenceNum;
   private Bootstrap bootstrap;
   private final Map<Long, RPCResponseListener> responseListeners;
 
   public RPCClient() {
+    this.eventLoopGroup = new NioEventLoopGroup();
     this.sequenceNum = new AtomicLong(0);
     this.bootstrap = new Bootstrap();
     this.responseListeners = new ConcurrentHashMap<>();
   }
 
   public void start() {
-    final EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     final ChannelInitializer<SocketChannel> channelInitializer =
       new ChannelInitializer<SocketChannel>() {
         @Override
@@ -93,5 +94,16 @@ public class RPCClient {
     final long seq = sequenceNum.incrementAndGet();
     responseListeners.put(seq, new RPCResponseListener());
     return seq;
+  }
+
+  @Override
+  public void close() throws Exception{
+    try {
+      System.out.println("Shutting down RPC Client");
+      eventLoopGroup.shutdownGracefully().sync();
+    } catch (Exception e) {
+      System.out.println("Failure while shutting RPC client");
+      throw e;
+    }
   }
 }

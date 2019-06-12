@@ -30,12 +30,12 @@ if [ "$command" == "start" ]
 then
   echo "starting kvstore"
   exec $JAVA_HOME/bin/java -cp "$KVSTORE_CLASSPATH" com.kvstore.daemon.KVStoreDaemon
-elif ["$command" == "stop" ]
+elif [ "$command" == "stop" ]
 then
   PID=`ps -eaf | grep -i 'kvstore' | grep -v grep | awk '{print $2}'`
   if [[ "" !=  "$PID" ]]; then
     echo "stopping kvstore"
-    killall -9 kvstore
+    kill $PID
   else
     echo "kvstore not running. nothing to stop"
   fi
